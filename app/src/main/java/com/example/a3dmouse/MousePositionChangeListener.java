@@ -1,5 +1,6 @@
 package com.example.a3dmouse;
 
 public interface MousePositionChangeListener {
-    void onMouseMoved(MousePositionDelta mousePositionDelta);
+    void onMouseMovedAccelerometer(MousePositionLinearDelta mousePositionLinearDelta);
+    void onMouseMovedGyroscope(MousePositionAngleDelta mousePositionDelta);
 }

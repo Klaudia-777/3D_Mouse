@@ -1,97 +1,79 @@
 package com.example.a3dmouse;
 
 import android.content.Context;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
-import android.util.Log;
 
-public class PositionDetectionService implements SensorEventListener {
-    private SensorManager senSensorManager;
-    private MousePositionChangeListener mousePositionChangeListener;
-    private Sensor senAccelerometer;
+public class PositionDetectionService {
+    private Accelerometer accelerometer;
+    private Gyroscope gyroscope;
+
     private double last_x, last_y, last_z;
-    private double lastUpdate;
-    private static float SHAKE_THRESHOLD = 0.1f;
+    private double last_azimuth, last_pitch, last_roll;
+    private long lastUpdateOfAccelerometer;
+    private long lastUpdateOfGyroscope;
+    private static float SHAKE_THRESHOLD = 1.0f;
 
-    public PositionDetectionService(Context context, MousePositionChangeListener mousePositionChangeListener) {
-        this.mousePositionChangeListener = mousePositionChangeListener;
-        senSensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
-        senAccelerometer = senSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        senSensorManager.registerListener(this, senAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-    }
+    public PositionDetectionService(Context context, final MousePositionChangeListener mousePositionChangeListener) {
+        accelerometer = new Accelerometer(context);
+        gyroscope = new Gyroscope(context);
+        accelerometer.setListener(new Accelerometer.Listener() {
 
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        Sensor mySensor = event.sensor;
-        if (mySensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            double x = event.values[0];
-            double y = event.values[1];
-            double z = event.values[2];
+            @Override
+            public void onTranslation(double tx, double ty, double tz) {
+                long curTime = System.currentTimeMillis();
+                double diffTime = (curTime - lastUpdateOfAccelerometer);
+                if (diffTime > 1000) {
+                    lastUpdateOfAccelerometer = curTime;
 
-            long curTime = System.currentTimeMillis();
+                    MousePositionLinearDelta mousePositionDelta = new MousePositionLinearDelta((tx - last_x),
+                            (ty - last_y),
+                            (tz - last_z));
+                    double speed = Math.abs(mousePositionDelta.getDeltaX() + mousePositionDelta.getDeltaY() + mousePositionDelta.getDeltaZ());
 
-            double diffTime = (curTime - lastUpdate);
-            if (diffTime > 1000) {
-                lastUpdate = curTime;
+                    if (speed > SHAKE_THRESHOLD) {
+                        mousePositionChangeListener.onMouseMovedAccelerometer(mousePositionDelta);
+                    }
 
-                MousePositionDelta mousePositionDelta = new MousePositionDelta((x - last_x),
-                        (y - last_y),
-                        (z - last_z));
-                double speed = Math.abs(mousePositionDelta.getDeltaX() + mousePositionDelta.getDeltaY() + mousePositionDelta.getDeltaZ());
+                    last_x = tx;
+                    last_y = ty;
+                    last_z = tz;
 
-                if (speed > SHAKE_THRESHOLD) {
-                    mousePositionChangeListener.onMouseMoved(mousePositionDelta);
                 }
-
-                last_x = x;
-                last_y = y;
-                last_z = z;
-
             }
-        }
+        });
+
+        gyroscope.setListener(new Gyroscope.Listener() {
+
+            @Override
+            public void onTranslation(double azimuth, double pitch, double roll) {
+                long curTime = System.currentTimeMillis();
+                double diffTime = (curTime - lastUpdateOfGyroscope);
+                if (diffTime > 1000) {
+                    lastUpdateOfGyroscope = curTime;
+
+                    MousePositionAngleDelta mousePositionDelta = new MousePositionAngleDelta((azimuth - last_azimuth),
+                            (pitch - last_pitch),
+                            (roll - last_roll));
+                    double speed = Math.abs(mousePositionDelta.getDeltaX() + mousePositionDelta.getDeltaY() + mousePositionDelta.getDeltaZ());
+
+                    if (speed > SHAKE_THRESHOLD) {
+                    mousePositionChangeListener.onMouseMovedGyroscope(mousePositionDelta);
+                    }
+
+                    last_azimuth = azimuth;
+                    last_pitch = pitch;
+                    last_roll = roll;
+                }
+            }
+        });
     }
 
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        Log.d("MY_APP", sensor.toString() + " - " + accuracy);
+    public void unregisterListeners() {
+        accelerometer.unregister();
+        gyroscope.unregister();
     }
 
-    protected void unregisterListener() {
-        senSensorManager.unregisterListener(this);
+    public void registerListeners() {
+        accelerometer.register();
+        gyroscope.register();
     }
-
-    protected void registerListener() {
-        senSensorManager.registerListener(this, senAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-    }
-
-//    private SensorManager sensorManager;
-//    private Sensor sensor;
-//    private Double[] gravity = new Double[3];
-//    private Double[] linear_acceleration = new Double[3];
-//
-//    public PositionDetectionService(Context context) {
-//        this.sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
-//        this.sensor = this.sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-//    }
-//
-//    public void onSensorChanged(SensorEvent event) {
-//        // In this example, alpha is calculated as t / (t + dT),
-//        // where t is the low-pass filter's time-constant and
-//        // dT is the event delivery rate.
-//
-//        final double alpha = 0.8;
-//
-//
-//        // Isolate the force of gravity with the low-pass filter.
-//        gravity[0] = alpha * gravity[0] + (1 - alpha) * event.values[0];
-//        gravity[1] = alpha * gravity[1] + (1 - alpha) * event.values[1];
-//        gravity[2] = alpha * gravity[2] + (1 - alpha) * event.values[2];
-//
-//        // Remove the gravity contribution with the high-pass filter.
-//        linear_acceleration[0] = event.values[0] - gravity[0];
-//        linear_acceleration[1] = event.values[1] - gravity[1];
-//        linear_acceleration[2] = event.values[2] - gravity[2];
-//    }
 }
