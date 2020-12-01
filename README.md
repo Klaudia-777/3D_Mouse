@@ -19,5 +19,5 @@ Setting up bluetooth server:
 Sensors rotational movement:
 https://www.mathworks.com/matlabcentral/mlc-downloads/downloads/submissions/40876/versions/8/previews/sensorgroup/Examples/html/CapturingAzimuthRollPitchExample.html
 
-
-
+Notes:
+https://docs.google.com/document/d/1ZamhW14GFFgr_wMp03_-e6S4dJuTJBk4TK0rlHrONDI/edit
