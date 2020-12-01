@@ -2,17 +2,24 @@ package com.example.a3dmouse;
 
 import android.content.Context;
 
-public class PositionDetectionService {
+/*
+PositionDetectionService class handles the usage of sensors.
+Also, while defining listeners for each sensor it provides
+the implementation of onTranslation() methods.
+ */
+class PositionDetectionService {
     private Accelerometer accelerometer;
     private Gyroscope gyroscope;
 
     private double last_x, last_y, last_z;
     private double last_azimuth, last_pitch, last_roll;
+
     private long lastUpdateOfAccelerometer;
     private long lastUpdateOfGyroscope;
+
     private static float SHAKE_THRESHOLD = 1.0f;
 
-    public PositionDetectionService(Context context, final MousePositionChangeListener mousePositionChangeListener) {
+    PositionDetectionService(Context context, final PhonePositionChangeListener phonePositionChangeListener) {
         accelerometer = new Accelerometer(context);
         gyroscope = new Gyroscope(context);
         accelerometer.setListener(new Accelerometer.Listener() {
@@ -24,13 +31,15 @@ public class PositionDetectionService {
                 if (diffTime > 1000) {
                     lastUpdateOfAccelerometer = curTime;
 
-                    MousePositionLinearDelta mousePositionDelta = new MousePositionLinearDelta((tx - last_x),
+                    PhonePositionLinearDelta phonePositionLinearDelta = new PhonePositionLinearDelta((tx - last_x),
                             (ty - last_y),
                             (tz - last_z));
-                    double speed = Math.abs(mousePositionDelta.getDeltaX() + mousePositionDelta.getDeltaY() + mousePositionDelta.getDeltaZ());
+
+                    //TODO: is this needed?
+                    double speed = Math.abs(phonePositionLinearDelta.getX() + phonePositionLinearDelta.getY() + phonePositionLinearDelta.getZ());
 
                     if (speed > SHAKE_THRESHOLD) {
-                        mousePositionChangeListener.onMouseMovedAccelerometer(mousePositionDelta);
+                        phonePositionChangeListener.onPhoneMovedAccelerometer(phonePositionLinearDelta);
                     }
 
                     last_x = tx;
@@ -50,13 +59,15 @@ public class PositionDetectionService {
                 if (diffTime > 1000) {
                     lastUpdateOfGyroscope = curTime;
 
-                    MousePositionAngleDelta mousePositionDelta = new MousePositionAngleDelta((azimuth - last_azimuth),
+                    PhonePositionAnglesDelta phonePositionAnglesDelta = new PhonePositionAnglesDelta((azimuth - last_azimuth),
                             (pitch - last_pitch),
                             (roll - last_roll));
-                    double speed = Math.abs(mousePositionDelta.getDeltaX() + mousePositionDelta.getDeltaY() + mousePositionDelta.getDeltaZ());
+
+                    //TODO: is this needed?
+                    double speed = Math.abs(phonePositionAnglesDelta.getAzimuth() + phonePositionAnglesDelta.getPitch() + phonePositionAnglesDelta.getRoll());
 
                     if (speed > SHAKE_THRESHOLD) {
-                    mousePositionChangeListener.onMouseMovedGyroscope(mousePositionDelta);
+                    phonePositionChangeListener.onPhoneMovedGyroscope(phonePositionAnglesDelta);
                     }
 
                     last_azimuth = azimuth;
@@ -67,12 +78,12 @@ public class PositionDetectionService {
         });
     }
 
-    public void unregisterListeners() {
+    void unregisterListeners() {
         accelerometer.unregister();
         gyroscope.unregister();
     }
 
-    public void registerListeners() {
+    void registerListeners() {
         accelerometer.register();
         gyroscope.register();
     }

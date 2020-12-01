@@ -12,6 +12,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.io.IOException;
 import java.util.UUID;
 
+/*
+The class stands for establishing connection between devices.
+ */
 public class CommunicationsTask extends AsyncTask<Void, Void, Void> {
 
     private boolean mConnected = true;

@@ -9,9 +9,19 @@ import android.hardware.SensorManager;
 import java.util.ArrayList;
 import java.util.List;
 
+/*
+The Gyroscope class is responsible for registering the phone rotational coordinates in 3D space.
+The name may suggest the usage of GYROSCOPE sensor but its only
+for the better understanding of what it actually does.
+ */
 class Gyroscope {
 
     public interface Listener {
+
+        // This method is responsible for registering deltas
+        // between the subsequent captured phone rotational
+        // coordinates (azimuth, pitch and roll).
+        // --> implemented in PositionDetectionService class.
         void onTranslation(double rx, double ry, double rz);
     }
 

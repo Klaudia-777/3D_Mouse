@@ -1,26 +1,29 @@
 package com.example.a3dmouse;
 
-public class MousePositionLinearDelta {
+/*
+PhonePositionLinearDelta class represents the change of position of the phone in 3D space (x,y,z).
+ */
+class PhonePositionLinearDelta {
 
     private final double x;
     private final double y;
     private final double z;
 
-    public MousePositionLinearDelta(double x, double y, double z) {
+    PhonePositionLinearDelta(double x, double y, double z) {
         this.x = x;
         this.y = y;
         this.z = z;
     }
 
-    public double getDeltaX() {
+    double getX() {
         return x;
     }
 
-    public double getDeltaY() {
+    double getY() {
         return y;
     }
 
-    public double getDeltaZ() {
+    double getZ() {
         return z;
     }
 }

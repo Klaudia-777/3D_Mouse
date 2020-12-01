@@ -6,9 +6,17 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
+/*
+The Accelerometer class is responsible for registering
+the phone linear coordinates in 3D space.
+ */
 class Accelerometer {
 
     public interface Listener {
+
+        // This method is responsible for registering deltas
+        // between the subsequent captured phone coordinates.
+        // --> implemented in PositionDetectionService class.
         void onTranslation(double tx, double ty, double tz);
     }
 

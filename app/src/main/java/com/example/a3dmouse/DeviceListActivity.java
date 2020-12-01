@@ -16,6 +16,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.util.ArrayList;
 import java.util.Set;
 
+/*
+DeviceListActivity class is responsible for the opening app layout.
+The class handles enabling Bluetooth on the mobile device and displays
+the list of available Bluetooth devices.
+ */
 public class DeviceListActivity extends AppCompatActivity {
 
     ListView mDeviceList;

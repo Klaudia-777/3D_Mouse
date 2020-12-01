@@ -3,30 +3,41 @@ package com.example.a3dmouse;
 import android.os.Bundle;
 import android.widget.TextView;
 
-public class MyCommunicationsActivity extends CommunicationsActivity implements MousePositionChangeListener {
+/*
+MyCommunicationsActivity implements the actual actions performed
+after establishing Bluetooth connection between phone and the computer.
+ */
+public class MyCommunicationsActivity extends CommunicationsActivity implements PhonePositionChangeListener {
     private PositionDetectionService positionDetectionService;
-    private MousePointerService mousePointerService;
+    private CursorService cursorService;
 
     private double positionX;
     private double positionY;
     private double upDownAngle;
+    private double leftRightAngle;
 
-    private TextView xCoordinate;
-    private TextView yCoordinate;
+    private TextView xCoordinateTextView;
+    private TextView yCoordinateTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        /* The main 'communication activity' view displaying cursor x, y coordinates.
+           These values are temporarily displayed on the phone screen
+           to enable easy checks if they are sent to the bluetooth server correctly.
+        */
         setContentView(R.layout.activity_main);
-        xCoordinate = findViewById(R.id.xCoordinte);
-        yCoordinate = findViewById(R.id.yCoordinte);
+        xCoordinateTextView = findViewById(R.id.xCoordinte);
+        yCoordinateTextView = findViewById(R.id.yCoordinte);
 
         positionX = 0;
         positionY = 0;
         upDownAngle = 0;
+        leftRightAngle = 0;
 
         positionDetectionService = new PositionDetectionService(getBaseContext(), this);
-        mousePointerService = new MousePointerService(1);
+        cursorService = new CursorService(1);
     }
 
     protected void onPause() {
@@ -40,39 +51,39 @@ public class MyCommunicationsActivity extends CommunicationsActivity implements 
     }
 
     @Override
-    public void onMouseMovedAccelerometer(MousePositionLinearDelta mousePositionLinearDelta) {
-        positionX += mousePositionLinearDelta.getDeltaX();
-        positionY += mousePositionLinearDelta.getDeltaY();
-        changeMouseCoordinatesLinear(positionX, positionY);
+    public void onPhoneMovedAccelerometer(PhonePositionLinearDelta phonePositionLinearDelta) {
+        positionX += phonePositionLinearDelta.getX();
+        positionY += phonePositionLinearDelta.getY();
+        changeCursorCoordinatesLinear(positionX, positionY);
     }
 
     @Override
-    public void onMouseMovedGyroscope(MousePositionAngleDelta mousePositionDelta) {
-        positionX += mousePositionDelta.getDeltaY();
-        upDownAngle += mousePositionDelta.getDeltaX();
-        changeMouseCoordinatesAngles(positionX, upDownAngle);
+    public void onPhoneMovedGyroscope(PhonePositionAnglesDelta phonePositionAnglesDelta) {
+        leftRightAngle += phonePositionAnglesDelta.getAzimuth();
+        upDownAngle += phonePositionAnglesDelta.getPitch();
+        changeCursorCoordinatesAngles(leftRightAngle, upDownAngle);
     }
 
-    private void changeMouseCoordinatesAngles(double xAngle, double yAngle) {
-        mousePointerService.setMouseMovementAngle(xAngle, yAngle);
-        xCoordinate.setText(setPrecision(mousePointerService.getMouseXCoordinate()));
-        yCoordinate.setText(setPrecision(mousePointerService.getMouseYCoordinate()));
+    private void changeCursorCoordinatesAngles(double xAngle, double yAngle) {
+        cursorService.setCursorMovementAngle(xAngle, yAngle);
+        xCoordinateTextView.setText(setPrecision(cursorService.getCursorXCoordinate()));
+        yCoordinateTextView.setText(setPrecision(cursorService.getCursorYCoordinate()));
         sendViaBluetooth();
     }
 
-    private void changeMouseCoordinatesLinear(double x, double y) {
-        mousePointerService.setMouseMovementLinear(x, y);
-        xCoordinate.setText(setPrecision(mousePointerService.getMouseXCoordinate()));
-        yCoordinate.setText(setPrecision(mousePointerService.getMouseYCoordinate()));
+    private void changeCursorCoordinatesLinear(double x, double y) {
+        cursorService.setCursorMovementLinear(x, y);
+        xCoordinateTextView.setText(setPrecision(cursorService.getCursorXCoordinate()));
+        yCoordinateTextView.setText(setPrecision(cursorService.getCursorYCoordinate()));
         sendViaBluetooth();
     }
 
     private void sendViaBluetooth() {
         String separator = ";";
-        for (byte bx : (xCoordinate.getText()+separator).getBytes()) {
+        for (byte bx : (xCoordinateTextView.getText()+separator).getBytes()) {
             mBluetoothConnection.write(bx);
         }
-        for (byte by : String.valueOf(yCoordinate.getText()).getBytes()) {
+        for (byte by : String.valueOf(yCoordinateTextView.getText()).getBytes()) {
             mBluetoothConnection.write(by);
         }
     }
@@ -81,9 +92,4 @@ public class MyCommunicationsActivity extends CommunicationsActivity implements 
         return String.format("%.2f", doubleValue);
     }
 
-//
-//    @Override
-//    protected void onDestroy() {
-//        super.onDestroy();
-//    }
 }
