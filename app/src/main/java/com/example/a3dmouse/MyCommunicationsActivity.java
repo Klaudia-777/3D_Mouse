@@ -1,91 +1,129 @@
 package com.example.a3dmouse;
 
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.widget.TextView;
+
+import java.util.Random;
 
 /*
 MyCommunicationsActivity implements the actual actions performed
 after establishing Bluetooth connection between phone and the computer.
  */
-public class MyCommunicationsActivity extends CommunicationsActivity implements PhonePositionChangeListener {
-    private PositionDetectionService positionDetectionService;
-    private CursorService cursorService;
-
-    private double positionX;
-    private double positionY;
-    private double upDownAngle;
-    private double leftRightAngle;
+public class MyCommunicationsActivity extends CommunicationsActivity implements SensorEventListener {
 
     private TextView xCoordinateTextView;
     private TextView yCoordinateTextView;
+    private Sensor mRotationVectorSensor;
+    private SensorManager mSensorManager;
+
+    private final float[] mRotationMatrix = new float[16];
+    private double x = 1;
+    private double y = 1;
+    private double z = 1;
+
+    private long lastTime = 0;
+    //TODO distance in meters
+    private long distance = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        /* The main 'communication activity' view displaying cursor x, y coordinates.
-           These values are temporarily displayed on the phone screen
-           to enable easy checks if they are sent to the bluetooth server correctly.
-        */
         setContentView(R.layout.activity_main);
         xCoordinateTextView = findViewById(R.id.xCoordinte);
         yCoordinateTextView = findViewById(R.id.yCoordinte);
+        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        //TODO: consider different sensor type
+        mRotationVectorSensor = mSensorManager.getDefaultSensor(
+                Sensor.TYPE_LINEAR_ACCELERATION);
 
-        positionX = 0;
-        positionY = 0;
-        upDownAngle = 0;
-        leftRightAngle = 0;
-
-        positionDetectionService = new PositionDetectionService(getBaseContext(), this);
-        cursorService = new CursorService(1);
+        mRotationMatrix[0] = 1;
+        mRotationMatrix[4] = 1;
+        mRotationMatrix[8] = 1;
+        mRotationMatrix[12] = 1;
+        start();
     }
 
-    protected void onPause() {
-        super.onPause();
-        positionDetectionService.unregisterListeners();
+    public void start() {
+        // enable our sensor when the activity is resumed, ask for
+        // 10 ms updates.
+        mSensorManager.registerListener(this, mRotationVectorSensor, 10000);
+
     }
 
-    protected void onResume() {
-        super.onResume();
-        positionDetectionService.registerListeners();
+    public void stop() {
+        // make sure to turn our sensor off when the activity is paused
+        mSensorManager.unregisterListener(this);
     }
 
-    @Override
-    public void onPhoneMovedAccelerometer(PhonePositionLinearDelta phonePositionLinearDelta) {
-        positionX += phonePositionLinearDelta.getX();
-        positionY += phonePositionLinearDelta.getY();
-        changeCursorCoordinatesLinear(positionX, positionY);
-    }
+    public void onSensorChanged(SensorEvent event) {
+        long current = System.currentTimeMillis();
+        double diff = (current - lastTime) / 1000;
 
-    @Override
-    public void onPhoneMovedGyroscope(PhonePositionAnglesDelta phonePositionAnglesDelta) {
-        leftRightAngle += phonePositionAnglesDelta.getAzimuth();
-        upDownAngle += phonePositionAnglesDelta.getPitch();
-        changeCursorCoordinatesAngles(leftRightAngle, upDownAngle);
-    }
+        if (diff > 0.5) {
+            if (mBluetoothConnection.ismConnected()) {
 
-    private void changeCursorCoordinatesAngles(double xAngle, double yAngle) {
-        cursorService.setCursorMovementAngle(xAngle, yAngle);
-        xCoordinateTextView.setText(setPrecision(cursorService.getCursorXCoordinate()));
-        yCoordinateTextView.setText(setPrecision(cursorService.getCursorYCoordinate()));
-        sendViaBluetooth();
-    }
+                /*SensorManager.getRotationMatrixFromVector(
+                        mRotationMatrix, event.values);
+                float[] quaternion = new float[4];
+                SensorManager.getQuaternionFromVector(quaternion, event.values);
+                double currentX = mRotationMatrix[0] * x + mRotationMatrix[1] * y;
+                double currentY = mRotationMatrix[4] * x + mRotationMatrix[5] * y;
+                double currentZ = mRotationMatrix[8] * x + mRotationMatrix[9] * y + mRotationMatrix[10] * z;
 
-    private void changeCursorCoordinatesLinear(double x, double y) {
-        cursorService.setCursorMovementLinear(x, y);
-        xCoordinateTextView.setText(setPrecision(cursorService.getCursorXCoordinate()));
-        yCoordinateTextView.setText(setPrecision(cursorService.getCursorYCoordinate()));
-        sendViaBluetooth();
+                double div = Math.sqrt(1 - quaternion[0] * quaternion[0]);
+                currentX = quaternion[1] / div;
+                currentY = quaternion[2] / div;
+                Math.toDegrees(Math.asin(div));
+
+                int distance = 3780; //1m w pikselach
+                PhoneDistanceDelta delta = new PhoneDistanceDelta(distance*currentX, distance*currentY);
+                onPhoneMovedGyroscope(delta);
+                x = currentX;
+                y = currentY;
+                z = currentZ;*/
+
+                //TODO
+                // plceholder - random cursor positions
+                // count deltas according to sensor changes and distance
+                // on the server side convert values from meters to pixels
+
+                int xCoordinate = Math.abs(new Random().nextInt() % 1500);
+                int yCoordinate = Math.abs(new Random().nextInt() % 1500);
+
+                PhoneDistanceDelta delta = new PhoneDistanceDelta(distance * xCoordinate, distance * yCoordinate);
+                onPhoneMovedGyroscope(delta);
+                lastTime = current;
+                sendViaBluetooth();
+            }
+        }
     }
 
     private void sendViaBluetooth() {
         String separator = ";";
-        for (byte bx : (xCoordinateTextView.getText()+separator).getBytes()) {
-            mBluetoothConnection.write(bx);
+        if (mBluetoothConnection.ismConnected()) {
+            mBluetoothConnection.write(xCoordinateTextView.getText() + separator + yCoordinateTextView.getText());
         }
-        for (byte by : String.valueOf(yCoordinateTextView.getText()).getBytes()) {
-            mBluetoothConnection.write(by);
-        }
+    }
+
+    protected void onPause() {
+        super.onPause();
+    }
+
+    protected void onResume() {
+        super.onResume();
+    }
+
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    }
+
+    public void onPhoneMovedGyroscope(PhoneDistanceDelta phoneDistanceDelta) {
+        xCoordinateTextView.setText(setPrecision(phoneDistanceDelta.getX()));
+        yCoordinateTextView.setText(setPrecision(phoneDistanceDelta.getY()));
     }
 
     private String setPrecision(double doubleValue) {

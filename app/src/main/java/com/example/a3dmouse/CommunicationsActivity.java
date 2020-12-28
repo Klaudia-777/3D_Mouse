@@ -9,6 +9,8 @@ import androidx.appcompat.app.AppCompatActivity;
 The abstract class providing the communication between devices.
  */
 public abstract class CommunicationsActivity extends AppCompatActivity {
+
+
     private String mDeviceAddress;
     protected CommunicationsTask mBluetoothConnection;
 

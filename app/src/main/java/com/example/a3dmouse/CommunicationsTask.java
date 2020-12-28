@@ -10,6 +10,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.UUID;
 
 /*
@@ -17,7 +19,7 @@ The class stands for establishing connection between devices.
  */
 public class CommunicationsTask extends AsyncTask<Void, Void, Void> {
 
-    private boolean mConnected = true;
+    private boolean mConnected = false;
     private ProgressDialog mProgressDialog;
     private BluetoothAdapter mBluetoothAdapter = null;
     private BluetoothSocket mBluetoothSocket = null;
@@ -28,11 +30,11 @@ public class CommunicationsTask extends AsyncTask<Void, Void, Void> {
 
     CommunicationsTask(AppCompatActivity activity, String address) {
         mCurrentActivity = activity;
-        mAddress =  address;
+        mAddress = address;
     }
 
     @Override
-    protected void onPreExecute()     {
+    protected void onPreExecute() {
         mProgressDialog = ProgressDialog.show(mCurrentActivity, "Connecting...", "Please wait!!!");  //show a progress dialog
     }
 
@@ -46,35 +48,38 @@ public class CommunicationsTask extends AsyncTask<Void, Void, Void> {
                 mBluetoothSocket = device.createInsecureRfcommSocketToServiceRecord(myUUID);//create a RFCOMM (SPP) connection
                 BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
                 mBluetoothSocket.connect();//start connection
+                mConnected = true;
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             mConnected = false;//if the try failed, you can check the exception here
         }
         return null;
     }
+
     @Override
     protected void onPostExecute(Void result) { //after the doInBackground, it checks if everything went fine
-
         super.onPostExecute(result);
 
-        if (!mConnected){
+        if (!mConnected) {
             message("Connection Failed. Is it a SPP Bluetooth running a server? Try again.");
             mCurrentActivity.finish();
 
-        }
-        else {
+        } else {
             message("Connected.");
         }
         mProgressDialog.dismiss();
     }
 
-    public void write(byte b) {
 
-        try {
-            mBluetoothSocket.getOutputStream().write((int)b);
-        }
-        catch (IOException e) {
+    public void write(String b) {
+        if (mConnected) {
+            try {
+                OutputStream os = mBluetoothSocket.getOutputStream();
+                PrintWriter printWriter = new PrintWriter(os);
+                printWriter.println(b);
+                printWriter.flush();
+            } catch (IOException e) {
+            }
         }
     }
 
@@ -84,8 +89,7 @@ public class CommunicationsTask extends AsyncTask<Void, Void, Void> {
 
         try {
             i = mBluetoothSocket.getInputStream().read();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
         }
 
         return i;
@@ -97,20 +101,18 @@ public class CommunicationsTask extends AsyncTask<Void, Void, Void> {
 
         try {
             n = mBluetoothSocket.getInputStream().available();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
         }
 
         return n;
     }
 
     public void disconnect() {
-        if (mBluetoothSocket!=null) //If the btSocket is busy
+        if (mBluetoothSocket != null) //If the btSocket is busy
         {
-            try  {
+            try {
                 mBluetoothSocket.close(); //close connection
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 message("Error");
             }
         }
@@ -120,9 +122,12 @@ public class CommunicationsTask extends AsyncTask<Void, Void, Void> {
         mCurrentActivity.finish();
     }
 
+    boolean ismConnected() {
+        return mConnected;
+    }
 
     private void message(String s) {
-        Toast.makeText(mCurrentActivity.getApplicationContext(),s, Toast.LENGTH_LONG).show();
+        Toast.makeText(mCurrentActivity.getApplicationContext(), s, Toast.LENGTH_LONG).show();
     }
 
 }
