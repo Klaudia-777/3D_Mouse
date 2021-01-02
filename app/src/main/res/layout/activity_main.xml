@@ -57,9 +57,41 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="61dp"
-        android:layout_marginTop="345dp"
+        android:layout_marginTop="342dp"
         android:text="TextView"
         app:layout_constraintStart_toEndOf="@+id/xCoordinte"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/inputDistanceLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="116dp"
+        android:layout_marginTop="132dp"
+        android:text="Enter distance from screen"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <EditText
+        android:id="@+id/distancePlainText"
+        android:layout_width="76dp"
+        android:layout_height="52dp"
+        android:layout_marginStart="167dp"
+        android:layout_marginTop="11dp"
+        android:ems="10"
+        android:inputType="textPersonName"
+        android:text="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/inputDistanceLabel" />
+
+    <TextView
+        android:id="@+id/meterLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="28dp"
+        android:text="m"
+        app:layout_constraintStart_toEndOf="@+id/distancePlainText"
+        app:layout_constraintTop_toBottomOf="@+id/inputDistanceLabel" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
